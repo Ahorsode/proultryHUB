@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f6f1;
+  --foreground: #161917;
+  --card: #fffefa;
+  --card-foreground: #161917;
+  --popover: #fffefa;
+  --popover-foreground: #161917;
+  --primary: #b47708;
+  --primary-foreground: #fffdf8;
+  --secondary: #eee9df;
+  --secondary-foreground: #252822;
+  --muted: #f0ede6;
+  --muted-foreground: #6d706a;
+  --accent: #e8b949;
+  --accent-foreground: #30240c;
+  --destructive: #b42318;
+  --border: #dfdbd2;
+  --input: #d7d2c8;
+  --ring: #b47708;
+  --sidebar: #151a1c;
+  --sidebar-foreground: #f7f7f4;
+  --sidebar-muted: #9ba2a2;
+  --chart-red: #c91818;
+  --chart-gold: #d99a0b;
+  --chart-blue: #1768a9;
+  --chart-green: #3d7b27;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #e7c66f;
+  color: #1c180e;
+}
