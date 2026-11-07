@@ -1,17 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Calculator, CheckCircle, FloppyDisk } from "@phosphor-icons/react";
+import Link from "next/link";
+import { ArrowRight, Calculator, CheckCircle, FloppyDisk } from "@phosphor-icons/react";
 import {
   convertQuoteToProjectAction,
   updateQuoteAction,
 } from "@/app/admin/actions";
+import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/form-controls";
 import { calculateQuoteSpecification, type CostTier } from "@/lib/calculate-quote";
-import type { Quote, Region } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
+import type { Project, Quote, Region } from "@/lib/types";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 type EditableValues = {
   land_area_sqm: number;
@@ -27,7 +29,15 @@ type EditableValues = {
   cost_total: number;
 };
 
-export function QuoteEditor({ quote, regions }: { quote: Quote; regions: Region[] }) {
+export function QuoteEditor({
+  quote,
+  regions,
+  linkedProjects = [],
+}: {
+  quote: Quote;
+  regions: Region[];
+  linkedProjects?: Pick<Project, "id" | "status" | "created_at">[];
+}) {
   const [flockSize, setFlockSize] = useState(quote.flock_size);
   const [regionId, setRegionId] = useState(quote.region_id);
   const [override, setOverride] = useState<CostTier | "">(quote.cost_tier_override ?? "");
@@ -46,6 +56,9 @@ export function QuoteEditor({ quote, regions }: { quote: Quote; regions: Region[
     cost_total: quote.cost_total,
   });
   const region = useMemo(() => regions.find((item) => item.id === regionId), [regions, regionId]);
+  // Conversion reads the saved quote on the server, so only allow it once "accepted" is persisted.
+  const alreadyConverted = linkedProjects.length > 0;
+  const canConvert = !alreadyConverted && quote.status === "accepted" && status === "accepted";
 
   function updateNumber(key: keyof EditableValues, value: string) {
     setValues((current) => ({ ...current, [key]: Number(value) }));
@@ -174,20 +187,56 @@ export function QuoteEditor({ quote, regions }: { quote: Quote; regions: Region[
         </div>
       </form>
 
-      <Card className={status === "accepted" ? "border-green-300 bg-green-50/40" : ""}>
-        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="font-semibold">Project conversion</p>
-            <p className="text-sm text-muted-foreground">
-              Accept the quote first, then create an immutable project specification snapshot.
-            </p>
+      <Card className={canConvert ? "border-green-300 bg-green-50/40" : ""}>
+        <CardContent className="grid gap-4 p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold">Project conversion</p>
+              <p className="text-sm text-muted-foreground">
+                {alreadyConverted
+                  ? "This quote has already been converted. Open the project below to track it."
+                  : status === "accepted" && quote.status !== "accepted"
+                    ? "Save the accepted status first, then convert this quote into a project."
+                    : "Accept the quote first, then create an immutable project specification snapshot."}
+              </p>
+            </div>
+            {alreadyConverted ? (
+              <Button asChild variant="outline">
+                <Link href={`/admin/projects/${linkedProjects[0].id}`}>
+                  Open project <ArrowRight size={16} />
+                </Link>
+              </Button>
+            ) : (
+              <form action={convertQuoteToProjectAction}>
+                <input type="hidden" name="id" value={quote.id} />
+                <Button type="submit" disabled={!canConvert}>
+                  <CheckCircle size={18} weight="fill" /> Convert to Project
+                </Button>
+              </form>
+            )}
           </div>
-          <form action={convertQuoteToProjectAction}>
-            <input type="hidden" name="id" value={quote.id} />
-            <Button type="submit" disabled={status !== "accepted"}>
-              <CheckCircle size={18} weight="fill" /> Convert to Project
-            </Button>
-          </form>
+          {linkedProjects.length ? (
+            <div className="border-t pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Projects created from this quote
+              </p>
+              <ul className="grid gap-2">
+                {linkedProjects.map((project) => (
+                  <li key={project.id}>
+                    <Link
+                      href={`/admin/projects/${project.id}`}
+                      className="flex items-center gap-3 text-sm font-medium hover:text-primary"
+                    >
+                      <span className="font-mono">Project {project.id.slice(0, 8).toUpperCase()}</span>
+                      <StatusBadge status={project.status} />
+                      <span className="text-xs text-muted-foreground">{formatDate(project.created_at)}</span>
+                      <ArrowRight size={14} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </div>

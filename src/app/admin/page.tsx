@@ -42,7 +42,9 @@ export default async function AdminOverviewPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide">Active projects</p>
                 <strong className="mt-2 block font-mono text-3xl">{data.activeProjects}</strong>
-                <p className="mt-1 text-sm text-muted-foreground">Across 5 regions</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Across {data.activeRegionCount} {data.activeRegionCount === 1 ? "region" : "regions"}
+                </p>
               </div>
             </div>
             <Link href="/admin/projects" className="mt-auto flex items-center gap-2 text-sm font-semibold text-primary">
@@ -65,7 +67,10 @@ export default async function AdminOverviewPage() {
                 <p className="mt-1 text-sm text-muted-foreground">Across active customer accounts</p>
               </div>
             </div>
-            <Link href="/admin/projects" className="mt-auto flex items-center gap-2 text-sm font-semibold text-primary">
+            <Link
+              href="/admin/projects?sort=outstanding"
+              className="mt-auto flex items-center gap-2 text-sm font-semibold text-primary"
+            >
               View receivables <ArrowRight size={16} />
             </Link>
           </CardContent>
@@ -112,10 +117,9 @@ export default async function AdminOverviewPage() {
                   .filter((project) => project.status !== "complete")
                   .slice(0, 5)
                   .map((project) => {
-                    const percent = Math.min(
-                      100,
-                      Math.round(((project.amount_spent ?? 0) / project.budget_total) * 100),
-                    );
+                    const percent = project.budget_total > 0
+                      ? Math.min(100, Math.round(((project.amount_spent ?? 0) / project.budget_total) * 100))
+                      : 0;
                     return (
                       <TableRow key={project.id}>
                         <TableCell>
@@ -149,7 +153,10 @@ export default async function AdminOverviewPage() {
             <CardTitle className="text-sm uppercase tracking-wide text-red-700">Attention required</CardTitle>
           </CardHeader>
           <CardContent className="divide-y p-4">
-            <div className="flex items-start gap-3 py-4 first:pt-0">
+            <Link
+              href="/admin/projects?sort=outstanding"
+              className="flex items-start gap-3 py-4 first:pt-0 hover:text-primary"
+            >
               <WarningCircle size={24} weight="fill" className="shrink-0 text-red-700" />
               <div className="flex-1">
                 <p className="text-sm font-semibold">Outstanding balances</p>
@@ -158,16 +165,16 @@ export default async function AdminOverviewPage() {
               <span className="font-mono text-xs font-semibold text-red-700">
                 {formatCurrency(data.outstanding)}
               </span>
-            </div>
-            <div className="flex items-start gap-3 py-4">
+            </Link>
+            <Link href="/admin/projects?sort=budget" className="flex items-start gap-3 py-4 hover:text-primary">
               <WarningCircle size={24} weight="fill" className="shrink-0 text-amber-600" />
               <div className="flex-1">
                 <p className="text-sm font-semibold">Budget risk &gt; 80%</p>
                 <p className="text-xs text-muted-foreground">
-                  {data.projects.filter((p) => (p.amount_spent ?? 0) / p.budget_total > 0.8).length} projects
+                  {data.budgetRiskCount} {data.budgetRiskCount === 1 ? "project" : "projects"}
                 </p>
               </div>
-            </div>
+            </Link>
             <Link href="/admin/projects" className="flex items-center gap-2 pt-4 text-sm font-semibold text-primary">
               Review projects <ArrowRight size={16} />
             </Link>

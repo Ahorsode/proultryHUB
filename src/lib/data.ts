@@ -75,19 +75,21 @@ export async function updateQuote(id: string, input: Partial<Quote>) {
     const store = getDemoStore();
     const index = store.quotes.findIndex((quote) => quote.id === id);
     if (index < 0) throw new Error("Quote not found");
+    const next = { ...store.quotes[index], ...input };
     store.quotes[index] = {
-      ...store.quotes[index],
-      ...input,
+      ...next,
+      regions: GHANA_REGIONS.find((item) => item.id === next.region_id) ?? null,
       updated_at: new Date().toISOString(),
     };
     return store.quotes[index];
   }
-  const payload = { ...input, regions: undefined };
+  const payload = { ...input };
+  delete payload.regions;
   const { data, error } = await getSupabaseAdmin()
     .from("quotes")
     .update(payload)
     .eq("id", id)
-    .select()
+    .select("*, regions(*)")
     .single();
   if (error) throw error;
   return data as Quote;
@@ -112,6 +114,22 @@ export async function getProjects(status?: ProjectStatus): Promise<Project[]> {
   return (data as Project[]).map((project) =>
     enrichProject(project, project.expenses ?? [], project.payments ?? []),
   );
+}
+
+export async function getProjectsForQuote(quoteId: string): Promise<Pick<Project, "id" | "status" | "created_at">[]> {
+  if (!isSupabaseConfigured()) {
+    return getDemoStore()
+      .projects.filter((project) => project.quote_id === quoteId)
+      .map(({ id, status, created_at }) => ({ id, status, created_at }))
+      .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }
+  const { data, error } = await getSupabaseAdmin()
+    .from("projects")
+    .select("id, status, created_at")
+    .eq("quote_id", quoteId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data as Pick<Project, "id" | "status" | "created_at">[];
 }
 
 export async function getProject(id: string): Promise<Project | null> {
@@ -224,6 +242,12 @@ export async function getDashboardData() {
     recentQuotes: quotes.slice(0, 5),
     recentProjects: projects.slice(0, 5),
     activeProjects: projects.filter((project) => project.status !== "complete").length,
+    activeRegionCount: new Set(
+      projects.filter((project) => project.status !== "complete").map((project) => project.region_id),
+    ).size,
+    budgetRiskCount: projects.filter(
+      (project) => project.budget_total > 0 && Number(project.amount_spent ?? 0) / project.budget_total > 0.8,
+    ).length,
     outstanding: projects.reduce((sum, project) => sum + Number(project.amount_outstanding ?? 0), 0),
     statusCounts,
   };

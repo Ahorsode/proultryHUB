@@ -1,7 +1,9 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ArrowDown,
+  ArrowRight,
   ArrowUp,
   CurrencyCircleDollar,
   Wallet,
@@ -35,15 +37,27 @@ export default async function ProjectDetailPage({
   if (!project) notFound();
 
   const remainingBudget = Math.max(0, project.budget_total - Number(project.amount_spent ?? 0));
-  const spentPercent = Math.min(100, Math.round((Number(project.amount_spent ?? 0) / project.budget_total) * 100));
+  const spentPercent = project.budget_total > 0
+    ? Math.min(100, Math.round((Number(project.amount_spent ?? 0) / project.budget_total) * 100))
+    : 0;
 
   return (
     <>
       <PageHeader
         title={project.customer_name}
-        description={`${project.regions?.name} · ${project.flock_size.toLocaleString()} birds · Project ${project.id.slice(0, 8).toUpperCase()}`}
+        description={`${project.regions?.name ?? "Unknown region"} · ${project.flock_size.toLocaleString()} birds · Project ${project.id.slice(0, 8).toUpperCase()}`}
+        back={{ href: "/admin/projects", label: "All projects" }}
         action={<ProjectStatusForm id={project.id} status={project.status} />}
       />
+
+      {project.quote_id ? (
+        <Link
+          href={`/admin/quotes/${project.quote_id}`}
+          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-primary"
+        >
+          View source quote {project.quote_id.slice(0, 8).toUpperCase()} <ArrowRight size={16} />
+        </Link>
+      ) : null}
 
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <SummaryCard icon={<CurrencyCircleDollar size={24} />} label="Project budget" value={formatCurrency(project.budget_total)} />

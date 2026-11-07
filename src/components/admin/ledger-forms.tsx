@@ -2,7 +2,9 @@ import { addExpenseAction, addPaymentAction } from "@/app/admin/actions";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form-controls";
 
-const today = new Date().toISOString().slice(0, 10);
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function AddExpenseForm({ projectId }: { projectId: string }) {
   return (
@@ -25,7 +27,7 @@ export function AddExpenseForm({ projectId }: { projectId: string }) {
           </Select>
         </Field>
         <Field label="Date">
-          <Input name="date" type="date" defaultValue={today} required />
+          <Input name="date" type="date" defaultValue={today()} required />
         </Field>
       </div>
       <Button type="submit" variant="outline" className="justify-self-start">Add expense</Button>
@@ -42,7 +44,7 @@ export function AddPaymentForm({ projectId }: { projectId: string }) {
           <Input name="amount" type="number" min="0.01" step="0.01" required />
         </Field>
         <Field label="Date">
-          <Input name="date" type="date" defaultValue={today} required />
+          <Input name="date" type="date" defaultValue={today()} required />
         </Field>
         <Field label="Method">
           <Select name="method" defaultValue="bank_transfer">

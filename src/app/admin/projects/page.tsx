@@ -19,13 +19,18 @@ import { formatCurrency } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+const PROJECT_STATUSES: ProjectStatus[] = ["registered", "in_progress", "stocked", "complete"];
+
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: ProjectStatus; sort?: string }>;
+  searchParams: Promise<{ status?: string; sort?: string }>;
 }) {
   const params = await searchParams;
-  const projects = await getProjects(params.status);
+  const status = PROJECT_STATUSES.includes(params.status as ProjectStatus)
+    ? (params.status as ProjectStatus)
+    : undefined;
+  const projects = await getProjects(status);
   const sorted = [...projects].sort((a, b) => {
     if (params.sort === "outstanding") {
       return Number(b.amount_outstanding) - Number(a.amount_outstanding);
@@ -46,7 +51,7 @@ export default async function ProjectsPage({
           <form className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
             <label className="grid gap-1.5 text-sm font-medium">
               Status
-              <Select name="status" defaultValue={params.status ?? ""} className="min-w-48">
+              <Select name="status" defaultValue={status ?? ""} className="min-w-48">
                 <option value="">All statuses</option>
                 <option value="registered">Registered</option>
                 <option value="in_progress">In progress</option>
@@ -65,6 +70,11 @@ export default async function ProjectsPage({
             <Button type="submit" variant="outline">
               <FunnelSimple size={18} /> Apply
             </Button>
+            {status || params.sort ? (
+              <Button asChild variant="ghost">
+                <Link href="/admin/projects">Clear</Link>
+              </Button>
+            ) : null}
           </form>
         </CardContent>
       </Card>
@@ -106,6 +116,14 @@ export default async function ProjectsPage({
               ))}
             </TableBody>
           </Table>
+          {!sorted.length ? (
+            <div className="p-12 text-center text-sm text-muted-foreground">
+              {status ? "No projects match this status. " : "No projects yet. "}
+              <Link href={status ? "/admin/projects" : "/admin/quotes"} className="font-semibold text-primary">
+                {status ? "Show all projects" : "Convert an accepted quote"}
+              </Link>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     </>
