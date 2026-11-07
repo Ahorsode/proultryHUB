@@ -8,6 +8,7 @@ import {
   addPayment,
   createProjectFromQuote,
   createQuote,
+  getProjectsForQuote,
   getQuote,
   updateProjectStatus,
   updateQuote,
@@ -87,6 +88,8 @@ export async function convertQuoteToProjectAction(formData: FormData) {
   const quote = await getQuote(id);
   if (!quote) throw new Error("Quote not found");
   if (quote.status !== "accepted") throw new Error("Only accepted quotes can be converted");
+  const [existing] = await getProjectsForQuote(id);
+  if (existing) redirect(`/admin/projects/${existing.id}`);
   const project = await createProjectFromQuote(quote);
   revalidatePath("/admin");
   revalidatePath("/admin/projects");

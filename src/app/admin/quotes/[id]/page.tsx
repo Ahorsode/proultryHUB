@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/admin/page-header";
 import { QuoteEditor } from "@/components/admin/quote-editor";
-import { getQuote, getRegions } from "@/lib/data";
+import { getProjectsForQuote, getQuote, getRegions } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,11 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [quote, regions] = await Promise.all([getQuote(id), getRegions()]);
+  const [quote, regions, linkedProjects] = await Promise.all([
+    getQuote(id),
+    getRegions(),
+    getProjectsForQuote(id),
+  ]);
   if (!quote) notFound();
 
   return (
@@ -19,9 +23,10 @@ export default async function QuoteDetailPage({
       <PageHeader
         title={quote.customer_name || "Unnamed prospect"}
         description={`Quote ${quote.id.slice(0, 8).toUpperCase()} · ${quote.flock_size.toLocaleString()} birds`}
-        action={<div />}
+        back={{ href: "/admin/quotes", label: "All quotes" }}
+        action={null}
       />
-      <QuoteEditor quote={quote} regions={regions} />
+      <QuoteEditor key={quote.updated_at} quote={quote} regions={regions} linkedProjects={linkedProjects} />
     </>
   );
 }
